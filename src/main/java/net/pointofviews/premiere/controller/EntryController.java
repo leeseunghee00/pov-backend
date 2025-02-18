@@ -26,25 +26,14 @@ public class EntryController implements EntrySpecification {
 
     @Override
     @PostMapping("/{premiereId}/entry")
-    public ResponseEntity<BaseResponse<CreateEntryResponse>> createEntry(
+    public ResponseEntity<BaseResponse<CreateEntryResponse>> prepareEntry(
             @AuthenticationPrincipal MemberDetailsDto loginMember,
             @PathVariable Long premiereId,
             @RequestBody @Valid CreateEntryRequest request
     ) {
-        CreateEntryResponse response = entryService.saveEntry(loginMember.member(), premiereId, request);
+        CreateEntryResponse response = entryService.prepareEntry(loginMember.member(), premiereId, request);
 
-        return BaseResponse.ok("시사회 응모가 성공적으로 완료되었습니다.", response);
-    }
-
-    @PostMapping("/{premiereId}/entry-2")
-    public ResponseEntity<BaseResponse<CreateEntryResponse>> createEntry2(
-            @AuthenticationPrincipal MemberDetailsDto loginMember,
-            @PathVariable Long premiereId,
-            @RequestBody @Valid CreateEntryRequest request
-    ) {
-        CreateEntryResponse response = entryService.saveEntry2(loginMember.member(), premiereId, request);
-
-        return BaseResponse.ok("시사회 응모가 성공적으로 완료되었습니다.", response);
+        return BaseResponse.ok("시사회 응모가 성공적으로 접수되었습니다.", response);
     }
 
     @Override
