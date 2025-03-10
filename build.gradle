@@ -68,6 +68,9 @@ dependencies {
     // Fcm
     implementation 'com.google.firebase:firebase-admin:9.4.1'
 
+    // Slack
+    implementation 'com.slack.api:slack-api-client:1.45.3'
+
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mysql'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'

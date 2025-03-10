@@ -66,3 +66,7 @@ toss:
 
 oauth:
   baseurl: https://point-of-views.com
+
+slack:
+  token:
+  channel:
