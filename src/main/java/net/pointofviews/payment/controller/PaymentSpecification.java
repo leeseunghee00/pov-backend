@@ -1,16 +1,18 @@
 package net.pointofviews.payment.controller;
 
+import org.springframework.http.ResponseEntity;
+
+import net.pointofviews.auth.dto.MemberDetailsDto;
+import net.pointofviews.common.dto.BaseResponse;
+import net.pointofviews.payment.dto.TempPaymentDto;
+import net.pointofviews.payment.dto.request.ConfirmPaymentRequest;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import net.pointofviews.common.dto.BaseResponse;
-import net.pointofviews.member.domain.Member;
-import net.pointofviews.payment.dto.TempPaymentDto;
-import net.pointofviews.payment.dto.request.ConfirmPaymentRequest;
-import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Payment", description = "결제 관련 API")
 public interface PaymentSpecification {
@@ -29,19 +31,9 @@ public interface PaymentSpecification {
                                     }
                                     """)
                     )
-            ),
-            @ApiResponse(responseCode = "403", description = "결제 임시 저장 실패",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                    {
-                                      "message": "결제자와 응모자가 동일하지 않습니다."
-                                    }
-                                    """)
-                    )
             )
     })
-    ResponseEntity<BaseResponse<TempPaymentDto>> createTempPayment(Member loginMember, TempPaymentDto dto);
+    ResponseEntity<BaseResponse<TempPaymentDto>> createTempPayment(MemberDetailsDto loginMember, TempPaymentDto request);
 
     @Operation(
             summary = "결제 저장",
@@ -79,6 +71,6 @@ public interface PaymentSpecification {
                     )
             )
     })
-    ResponseEntity<BaseResponse<Void>> createPayment(Member loginMember, ConfirmPaymentRequest dto);
+    ResponseEntity<BaseResponse<Void>> createPayment(MemberDetailsDto loginMember, ConfirmPaymentRequest dto);
 
 }

@@ -1,13 +1,5 @@
 package net.pointofviews.payment.controller;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import net.pointofviews.common.dto.BaseResponse;
-import net.pointofviews.member.domain.Member;
-import net.pointofviews.payment.dto.TempPaymentDto;
-import net.pointofviews.payment.dto.request.ConfirmPaymentRequest;
-import net.pointofviews.payment.service.PaymentService;
-import net.pointofviews.payment.service.TempPaymentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +7,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import net.pointofviews.auth.dto.MemberDetailsDto;
+import net.pointofviews.common.dto.BaseResponse;
+import net.pointofviews.payment.dto.PaymentDto;
+import net.pointofviews.payment.dto.TempPaymentDto;
+import net.pointofviews.payment.dto.request.ConfirmPaymentRequest;
+import net.pointofviews.payment.service.PaymentService;
+import net.pointofviews.payment.service.TempPaymentService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,10 +31,10 @@ public class PaymentController implements PaymentSpecification {
     @Override
     @PostMapping("/temp")
     public ResponseEntity<BaseResponse<TempPaymentDto>> createTempPayment(
-            @AuthenticationPrincipal(expression = "member") Member loginMember,
+            @AuthenticationPrincipal MemberDetailsDto loginMember,
             @RequestBody @Valid TempPaymentDto request
     ) {
-        TempPaymentDto response = tempPaymentService.saveTempPayment(loginMember, request);
+        TempPaymentDto response = tempPaymentService.saveTempPayment(loginMember.member(), request);
 
         return BaseResponse.ok("결제 데이터가 성공적으로 임시 저장되었습니다.", response);
     }
@@ -39,10 +42,12 @@ public class PaymentController implements PaymentSpecification {
     @Override
     @PostMapping
     public ResponseEntity<BaseResponse<Void>> createPayment(
-            @AuthenticationPrincipal(expression = "member") Member loginMember,
+            @AuthenticationPrincipal MemberDetailsDto loginMember,
             @RequestBody @Valid ConfirmPaymentRequest request
     ) {
-        paymentService.confirmPayment(loginMember, request);
+        PaymentDto confirmPayment = paymentService.confirmPayment(loginMember.member(), request);
+
+        paymentService.savePayment(confirmPayment);
 
         return BaseResponse.ok("결제가 성공적으로 승인되었습니다.");
     }
