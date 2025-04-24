@@ -6,6 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record CreateEntryResponse(
 
         @Schema(description = "주문 ID", example = "a4CWyWY5m89PNh7xJwhk1")
-        String orderId
+        String orderId,
+
+        @Schema(description = "멱등키", example = "a4CWyWY5m89PNh7xJwhk1")
+        String idempotencyKey
+
 ) {
 }

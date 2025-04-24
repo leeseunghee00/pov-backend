@@ -1,8 +1,8 @@
 package net.pointofviews.common.service;
 
-import net.pointofviews.common.slack.SlackPaymentDto;
+import net.pointofviews.common.slack.SlackMessageDto;
 
 public interface SlackService {
 
-	void sendMessage(SlackPaymentDto dto);
+	void sendMessage(SlackMessageDto dto);
 }

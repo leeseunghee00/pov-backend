@@ -5,12 +5,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import net.pointofviews.auth.dto.MemberDetailsDto;
 import net.pointofviews.common.dto.BaseResponse;
-import net.pointofviews.payment.dto.PaymentDto;
 import net.pointofviews.payment.dto.TempPaymentDto;
 import net.pointofviews.payment.dto.request.ConfirmPaymentRequest;
 import net.pointofviews.payment.service.PaymentService;
@@ -43,11 +43,10 @@ public class PaymentController implements PaymentSpecification {
     @PostMapping
     public ResponseEntity<BaseResponse<Void>> createPayment(
             @AuthenticationPrincipal MemberDetailsDto loginMember,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody @Valid ConfirmPaymentRequest request
     ) {
-        PaymentDto confirmPayment = paymentService.confirmPayment(loginMember.member(), request);
-
-        paymentService.savePayment(confirmPayment);
+        paymentService.confirmPayment(loginMember.member(), idempotencyKey, request);
 
         return BaseResponse.ok("결제가 성공적으로 승인되었습니다.");
     }

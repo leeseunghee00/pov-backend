@@ -1,17 +1,19 @@
 package net.pointofviews.common.service.impl;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import net.pointofviews.common.service.SlackService;
-import net.pointofviews.common.slack.SlackPaymentDto;
+import net.pointofviews.common.slack.SlackMessageDto;
 
 import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.request.chat.ChatPostMessageRequest;
+import com.slack.api.model.Attachment;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,13 +30,29 @@ public class SlackServiceImpl implements SlackService {
 	private String channel;
 
 	@Override
-	public void sendMessage(SlackPaymentDto dto) {
+	public void sendMessage(SlackMessageDto dto) {
 		try {
 			MethodsClient client = Slack.getInstance().methods(token);
 
+			StringBuilder detail = new StringBuilder();
+			dto.fields().forEach((key, value) -> {
+				detail
+					.append(key).append(": ")
+					.append(value).append("\n");
+			});
+
+			Attachment attachment = Attachment.builder()
+				.color("#FF0000")
+				.pretext("🚨 *" + dto.category() + "*")
+				.text(
+					"발생일시: " + dto.occurredAt() + "\n\n" +
+					"*상세 내용*" + "\n" + detail
+				)
+				.build();
+
 			ChatPostMessageRequest message = ChatPostMessageRequest.builder()
 				.channel(channel)
-				.attachments(dto.createAttachments())
+				.attachments(List.of(attachment))
 				.build();
 
 			client.chatPostMessage(message);

@@ -4,9 +4,11 @@ import static net.pointofviews.member.exception.MemberException.*;
 import static net.pointofviews.premiere.exception.EntryException.*;
 import static net.pointofviews.premiere.exception.PremiereException.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class EntryServiceImpl implements EntryService {
     private final PremiereRepository premiereRepository;
     private final MemberRepository memberRepository;
     private final TempPaymentRepository tempPaymentRepository;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public CreateEntryResponse prepareEntry(Member loginMember, Long premiereId, CreateEntryRequest request) {
@@ -54,8 +57,11 @@ public class EntryServiceImpl implements EntryService {
         }
 
         String orderId = UUID.randomUUID() + "_" + premiereId;
+        String idempotencyKey = "IDEMPOTENCY:" + UUID.randomUUID().toString();
 
-        return new CreateEntryResponse(orderId);
+        redisTemplate.opsForValue().set(idempotencyKey, orderId, Duration.ofMinutes(10));
+
+        return new CreateEntryResponse(orderId, idempotencyKey);
     }
 
     @Override

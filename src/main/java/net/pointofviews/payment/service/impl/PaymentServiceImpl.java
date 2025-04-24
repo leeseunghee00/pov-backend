@@ -2,8 +2,11 @@ package net.pointofviews.payment.service.impl;
 
 import static net.pointofviews.member.exception.MemberException.*;
 
+import java.time.Duration;
+import java.util.Optional;
+
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import net.pointofviews.common.lock.DistributeLock;
 import net.pointofviews.common.toss.TossClientManager;
@@ -11,7 +14,6 @@ import net.pointofviews.member.domain.Member;
 import net.pointofviews.member.repository.MemberRepository;
 import net.pointofviews.payment.domain.Payment;
 import net.pointofviews.payment.domain.TempPayment;
-import net.pointofviews.payment.dto.PaymentDto;
 import net.pointofviews.payment.dto.request.ConfirmPaymentRequest;
 import net.pointofviews.payment.dto.response.ConfirmPaymentResponse;
 import net.pointofviews.payment.exception.PaymentException;
@@ -19,9 +21,12 @@ import net.pointofviews.payment.repository.PaymentRepository;
 import net.pointofviews.payment.repository.TempPaymentRepository;
 import net.pointofviews.payment.service.PaymentService;
 import net.pointofviews.payment.util.PaymentValidator;
+import net.pointofviews.premiere.domain.Entry;
 import net.pointofviews.premiere.domain.Premiere;
 import net.pointofviews.premiere.dto.request.CreateEntryRequest;
+import net.pointofviews.premiere.dto.request.DeleteEntryRequest;
 import net.pointofviews.premiere.exception.PremiereException;
+import net.pointofviews.premiere.repository.EntryRepository;
 import net.pointofviews.premiere.repository.PremiereRepository;
 import net.pointofviews.premiere.service.EntryService;
 
@@ -40,10 +45,19 @@ public class PaymentServiceImpl implements PaymentService {
     private final MemberRepository memberRepository;
     private final EntryService entryService;
     private final PaymentValidator paymentValidator;
+	private final StringRedisTemplate redisTemplate;
+	private final EntryRepository entryRepository;
 
-    @Override
+	private static final Duration IDEMPOTENCY_TTL = Duration.ofMinutes(10);
+
+	@Override
     @DistributeLock(key = "#request.orderId().split(\"_\")[1]")
-    public PaymentDto confirmPayment(Member loginMember, ConfirmPaymentRequest request) {
+    public void confirmPayment(Member loginMember, String idempotencyKey, ConfirmPaymentRequest request) {
+
+		if ("PROCESSED".equals(redisTemplate.opsForValue().get(idempotencyKey))) {
+			log.info("이미 처리된 요청입니다. 멱등키={}", idempotencyKey);
+			return;
+		}
 
         Member member = memberRepository.findById(loginMember.getId())
                 .orElseThrow(() -> memberNotFound(loginMember.getId()));
@@ -57,37 +71,50 @@ public class PaymentServiceImpl implements PaymentService {
 
         paymentValidator.validatePayment(member, tempPayment, premiere);
 
-        ConfirmPaymentResponse response = tossClient.confirmPayment(member.getId(), request);
+        ConfirmPaymentResponse response = tossClient.confirmPayment(member.getId(), request, idempotencyKey);
 
-        return new PaymentDto(response, member, premiere);
+		try {
+			entryService.saveEntry(
+				member,
+				premiere,
+				new CreateEntryRequest(1, response.totalAmount()),
+				response.orderId()
+			);
+
+			Payment payment = Payment.builder()
+				.paymentKey(response.paymentKey())
+				.orderId(response.orderId())
+				.vendor("TOSS")
+				.amount(response.totalAmount())
+				.requestedAt(response.requestedAt().toLocalDateTime())
+				.approvedAt(response.approvedAt().toLocalDateTime())
+				.build();
+
+			paymentRepository.save(payment);
+			redisTemplate.opsForValue().set(idempotencyKey, "PROCESSED", IDEMPOTENCY_TTL);
+
+		} catch (Exception ex) {
+			if (response != null && response.failureCode() == null) {
+				cancelPayment(member, request.paymentKey(), "결제오류");
+			}
+		}
     }
 
-    @Override
-    @Transactional
-    public void savePayment(PaymentDto dto) {
+    public void cancelPayment(Member member, String paymentKey, String cancelReason) {
+        tossClient.cancelPayment(member.getId(), paymentKey, cancelReason);
 
-        entryService.saveEntry(
-                dto.member(),
-                dto.premiere(),
-                new CreateEntryRequest(1, dto.confirmPayment().totalAmount()),
-                dto.confirmPayment().orderId()
-        );
+		Payment payment = paymentRepository.findByPaymentKey(paymentKey);
 
-        Payment payment = Payment.builder()
-                .paymentKey(dto.confirmPayment().paymentKey())
-                .orderId(dto.confirmPayment().orderId())
-                .vendor("TOSS")
-                .amount(dto.confirmPayment().totalAmount())
-                .requestedAt(dto.confirmPayment().requestedAt().toLocalDateTime())
-                .approvedAt(dto.confirmPayment().approvedAt().toLocalDateTime())
-                .build();
+		paymentRepository.delete(payment);
 
-        paymentRepository.save(payment);
+		Optional<Entry> entry = entryRepository.findEntryByOrderId(payment.getOrderId());
+
+		if (entry.isPresent() && entry.get().getOrderId().equals(payment.getOrderId())) {
+			entryService.deleteEntry(
+				member,
+				entry.get().getPremiere().getId(),
+				new DeleteEntryRequest(payment.getOrderId())
+			);
+		}
     }
-
-    @Transactional
-    public void cancelPayment(String paymentKey, String cancelReason) {
-        tossClient.cancelPayment(paymentKey, cancelReason);
-    }
-
 }

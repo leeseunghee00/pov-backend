@@ -71,6 +71,10 @@ public interface PaymentSpecification {
                     )
             )
     })
-    ResponseEntity<BaseResponse<Void>> createPayment(MemberDetailsDto loginMember, ConfirmPaymentRequest dto);
+    ResponseEntity<BaseResponse<Void>> createPayment(
+        MemberDetailsDto loginMember,
+        String idempotencyKey,
+        ConfirmPaymentRequest dto
+    );
 
 }
