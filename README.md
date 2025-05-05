@@ -8,17 +8,17 @@
 
 # _Contents._
 
-- [Intro.]()
-- [Documents.]()
-- [Stack.]()
-- [SW Architecture.]()
-- [Challenges & Solutions.]()
-    - [1. Redisson 분산 락을 적용한 트랜잭션 충돌 해결]()
-        - [해결 방안]()
-        - [1-1. 테스트 진행]()
-        - [1-2. 테스트 결과]()
-    - [2. 안전한 결제 처리를 위한 아키텍처 설계]()
-        - [해결 방안]()
+- [Intro.](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#intro)
+- [Documents.](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#documents)
+- [Stack.](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#stack)
+- [SW Architecture.](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#sw-architecture)
+- [Challenges & Solutions.](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#challenges--solutions)
+    - [1. Redisson 분산 락을 적용한 트랜잭션 충돌 해결](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#1-redisson-분산-락을-적용한-트랜잭션-충돌-해결)
+        - [해결 방안](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#해결-방안)
+        - [1-1. 테스트 진행](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#1-1-테스트-진행)
+        - [1-2. 테스트 결과](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#1-2-테스트-결과)
+    - [2. 안전한 결제 처리를 위한 아키텍처 설계](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#2-안전한-결제-처리를-위한-아키텍처-설계)
+        - [해결 방안](https://github.com/leeseunghee00/pov-backend/tree/dev?tab=readme-ov-file#해결-방안-1)
 
 <br >
 
